@@ -194,7 +194,7 @@ let collectMeta = (currentPage) => {
 }
 
 let collectSpotifyMeta = () => {
-    let htmlString = document.querySelector('pre.sc-42df6821-0.cFFVtY').innerHTML;
+    let htmlString = document.querySelectorAll('pre')[1].innerHTML;
     let jsonString = htmlString.replace(/<[^>]*>/g, '');
     let jsonData = JSON.parse(jsonString);
     let tracks = jsonData.tracks.items.map(item => `${item.track_number} ${item.name}`).join('\n');
