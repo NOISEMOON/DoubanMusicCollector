@@ -3,6 +3,7 @@
 - https://github.com/zeqianli/DoubanListingHelper
 
 使用方法：
+0. 在本页面点击 Code -> Download ZIP，下载 zip 文件到本地并解压，在 Chrome 浏览器中加载解压后的插件
 1. 在 Spotify 客户端中点击分享，复制 Album Link
 2. 访问 Spotify for Developers 并登录：https://developer.spotify.com/documentation/web-api/reference/get-an-album
 3. 在 id 中输入 album id，例如：`https://open.spotify.com/album/449cSwxW2mczsRKAV8BetQ?si=cCZ287s4SD6seUCIFXLEEA` 中的 `449cSwxW2mczsRKAV8BetQ`
