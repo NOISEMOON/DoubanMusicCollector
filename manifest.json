@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
-    "name": "Douban-Helper",
-    "version": "0.2",
-    "description": "豆瓣添加条目助手-网易云版",
+    "name": "DoubanMusicCollector",
+    "version": "0.1",
+    "description": "两键添加条目到豆瓣音乐",
     "icons": {
       "49": "icons/icon-49.png"
     },
@@ -14,7 +14,8 @@
                     "*://*.bandcamp.com/*",
                     "*://www.discogs.com/*release*", 
                     "*://music.apple.com/*/album/*",
-                    "*://music.163.com/*"
+                    "*://music.163.com/*",
+                    "*://developer.spotify.com/*"
                 ],
         "js": ["./node_modules/webextension-polyfill/dist/browser-polyfill.min.js","content.js"]
       }
