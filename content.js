@@ -194,10 +194,21 @@ let collectMeta = (currentPage) => {
 }
 
 let collectSpotifyMeta = () => {
+    // 用 class select 的话会是 document.querySelector('pre.sc-42df6821-0.cFFVtY').innerHTML
+    // 但这个 class name 看起来像是加密或者随机生成的，不知道以后会不会变
     let htmlString = document.querySelectorAll('pre')[1].innerHTML;
     let jsonString = htmlString.replace(/<[^>]*>/g, '');
     let jsonData = JSON.parse(jsonString);
     let tracks = jsonData.tracks.items.map(item => `${item.track_number} ${item.name}`).join('\n');
+    let albumType = jsonData.album_type;
+    
+    // Spotify 只有 "album", "single", "compilation"
+    let releaseType = 'Album';
+    if (albumType === 'single') {
+        releaseType = 'Single';
+    } else if (albumType === 'compilation') {
+        releaseType = 'Compilation';
+    }
 
     // Single, EP, Album
     out = {
@@ -207,7 +218,7 @@ let collectSpotifyMeta = () => {
         'albumAltName': null,
         'artists': jsonData.artists.map(artist => artist.name),
         'genre': '',
-        'releaseType': 'Album', // TODO
+        'releaseType': releaseType,
         'media': 'Digital',
         'date': jsonData.release_date,
         'label': jsonData.label,
