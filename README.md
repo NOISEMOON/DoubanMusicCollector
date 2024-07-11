@@ -1,8 +1,3 @@
-## Updates
-### 2024-07-11 
-- Manifest 升级到了 V3，避免 V2 版本的过期问题：https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline?hl=zh-cn
-- 增加了自动识别 Spotify 专辑类型的功能
-
 ## Introduction
 在以下两个项目的基础上，增加了通过 Spotify 添加音乐条目的功能：
 - https://github.com/Sneexy/DoubanAddCloudMusicHelper
@@ -22,3 +17,8 @@
 有任何使用问题请私信我，我会及时更新此插件：
 - douban: https://www.douban.com/people/araell/
 - weibo: https://weibo.com/u/7383494480
+
+## Updates
+### 2024-07-11 
+- Manifest 升级到了 V3，避免 V2 版本的过期问题：https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline?hl=zh-cn
+- 增加了自动识别 Spotify 专辑类型的功能
