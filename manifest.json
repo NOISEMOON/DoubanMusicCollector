@@ -1,27 +1,42 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "DoubanMusicCollector",
     "version": "0.1",
     "description": "两键添加条目到豆瓣音乐",
     "icons": {
-      "49": "icons/icon-49.png"
+        "49": "icons/icon-49.png"
     },
     "content_scripts": [
-      {
-        "matches": ["https://music.douban.com/new_subject",
-                    "*://*.bandcamp.com/*",
-                    "*://www.discogs.com/*master*",
-                    "*://*.bandcamp.com/*",
-                    "*://www.discogs.com/*release*", 
-                    "*://music.apple.com/*/album/*",
-                    "*://music.163.com/*",
-                    "*://developer.spotify.com/*"
-                ],
-        "js": ["./node_modules/webextension-polyfill/dist/browser-polyfill.min.js","content.js"]
-      }
+        {
+            "matches": [
+                "https://music.douban.com/new_subject",
+                "*://*.bandcamp.com/*",
+                "*://www.discogs.com/*master*",
+                "*://*.bandcamp.com/*",
+                "*://www.discogs.com/*release*",
+                "*://music.apple.com/*/album/*",
+                "*://music.163.com/*",
+                "*://developer.spotify.com/*"
+            ],
+            "js": [
+                "./node_modules/webextension-polyfill/dist/browser-polyfill.min.js",
+                "content.js"
+            ]
+        }
     ],
-    "background":{
-        "scripts": ["./node_modules/webextension-polyfill/dist/browser-polyfill.min.js","background.js"]
+    "background": {
+        "service_worker": "background.js"
     },
-    "permissions":[ "downloads", "tabs"]
-  }
+    "permissions": [
+        "downloads",
+        "tabs"
+    ],
+    "host_permissions": [
+        "https://music.douban.com/*",
+        "*://*.bandcamp.com/*",
+        "*://www.discogs.com/*",
+        "*://music.apple.com/*",
+        "*://music.163.com/*",
+        "*://developer.spotify.com/*"
+    ]
+}
