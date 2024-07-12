@@ -21,6 +21,8 @@
 - weibo: https://weibo.com/u/7383494480
 
 ## Updates
+### 2024-07-12
+- 将 HTML 实体表示的特殊字符反转义为原始字符
 ### 2024-07-11 
 - Manifest 升级到了 V3，避免 V2 版本的过期问题：https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline?hl=zh-cn
 - 增加了自动识别 Spotify 专辑类型的功能

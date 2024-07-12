@@ -1,4 +1,7 @@
+importScripts('lodash.js');
+
 console.log("background console starts");
+console.log(_.unescape("&amp;"));
 
 let meta = null; // metadata
 
@@ -35,7 +38,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             if (meta) {
                 console.log("Douban-1 message received and meta is stored in background.");
                 getActiveTab().then((tabs) => {
-                    chrome.tabs.sendMessage(tabs[0].id, { 'meta': JSON.stringify(meta) });
+                    let metaJSON = _.unescape(JSON.stringify(meta));
+                    chrome.tabs.sendMessage(tabs[0].id, { 'meta': metaJSON });
                     meta = null;
                 });
             }
