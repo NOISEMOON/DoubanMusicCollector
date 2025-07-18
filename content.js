@@ -259,57 +259,260 @@ let collectBandcampMeta = () => {
     return out;
 }
 
-let collectDiscogsMeta = () => { // TODO
+let collectDiscogsMeta = () => {
     out = {}
     let keys = ['url', 'album', 'barcode', 'albumAltName', 'artists', 'genre', 'releaseType', 'media', 'date', 'label', 'numberOfDiscs', 'isrc', 'tracks', 'description', 'imgUrl']
     for (const key of keys) out[key] = null;
 
-    let profileBlock = document.getElementsByClassName('profile')[0]
-    out['url'] = document.URL
-    out['album'] = profileBlock.children[0].children[1].textContent.trim()
-    out['artists'] = Array.from(profileBlock.children[0].children[0].children).map((ele) => { return ele.title.trim() })
-    out['media'] = 'Vinyl'; // default
-    out['label'] = 'Self-Released'; //default
-    const keyRenameMap = { 'Genre': 'genre', 'Year': 'date', "Format": "media", "Released": 'date', 'Label': 'label' };
-    const valueRenameMap = { 'Hip Hop': 'Rap' }
-    for (let i = 1; i < profileBlock.children.length - 1; i += 2) { //This handles genre, media, date, label
-        try {
-            let key = profileBlock.children[i].textContent.replace(":", "").trim();
-            let value = profileBlock.children[i + 1].children[0].textContent.trim(); // TODO: multiple genres, multiple labels, etc; empty entry
-            key = keyRenameMap[key]
-            if (key) {
-                if (valueRenameMap[value]) value = valueRenameMap[value];
-                out[key] = value;
+    out['url'] = document.URL;
+    
+    // First try to extract data from release_schema JSON-LD script
+    try {
+        let schemaScript = document.getElementById('release_schema');
+        if (schemaScript) {
+            let schemaData = JSON.parse(schemaScript.textContent);
+            console.log('Found release_schema data:', schemaData);
+            
+            // Extract data from JSON-LD
+            if (schemaData.name) {
+                out['album'] = schemaData.name;
             }
-        } catch (err) { }
+            
+            if (schemaData.releaseOf && schemaData.releaseOf.byArtist) {
+                out['artists'] = schemaData.releaseOf.byArtist.map(artist => artist.name);
+            }
+            
+            if (schemaData.genre && Array.isArray(schemaData.genre)) {
+                out['genre'] = schemaData.genre[0]; // Use first genre
+            }
+            
+            if (schemaData.datePublished) {
+                out['date'] = schemaData.datePublished.toString();
+            }
+            
+            if (schemaData.recordLabel && schemaData.recordLabel.length > 0) {
+                out['label'] = schemaData.recordLabel[0].name;
+            }
+            
+            if (schemaData.musicReleaseFormat) {
+                out['media'] = schemaData.musicReleaseFormat;
+            }
+            
+            if (schemaData.image) {
+                out['imgUrl'] = schemaData.image;
+            }
+            
+            if (schemaData["@id"]) {
+                out['reference'] = schemaData["@id"];
+            }
+            // if (schemaData.catalogNumber) {
+            //     out['barcode'] = schemaData.catalogNumber;
+            // }
+            
+            // Extract additional information from offers if available
+            if (schemaData.offers && schemaData.offers.itemOffered) {
+                if (schemaData.offers.itemOffered.name && !out['album']) {
+                    // Extract album name from offer if not already set
+                    let offerName = schemaData.offers.itemOffered.name;
+                    // Usually in format "Artist - Album", extract album part
+                    let dashIndex = offerName.lastIndexOf(' - ');
+                    if (dashIndex !== -1) {
+                        out['album'] = offerName.substring(dashIndex + 3);
+                    }
+                }
+            }
+            
+            // Try to extract description from JSON-LD if available
+            // if (schemaData.description && !out['description']) {
+            //     out['description'] = schemaData.description;
+            // }
+            
+            console.log('Extracted from JSON-LD:', out);
+        }
+    } catch (err) {
+        console.error('Error parsing release_schema JSON-LD:', err);
     }
+    
+    // Fallback: Extract album title and artist using DOM selectors if not found in JSON-LD
+    if (!out['album'] || !out['artists']) {
+        try {
+            // Use MUI class names which are more stable than generated hash suffixes
+            let titleElement = document.querySelector('h1.MuiTypography-headLineXL') || 
+                              document.querySelector('h1[class*="title_"]');
+            if (titleElement) {
+                // Get album title (text after the artist link and dash)
+                let titleText = titleElement.textContent.trim();
+                let artistLink = titleElement.querySelector('a');
+                if (artistLink) {
+                    // Extract album name after artist name and dash
+                    let artistName = artistLink.textContent.trim();
+                    if (!out['artists']) out['artists'] = [artistName];
+                    // Album title is usually after " – "
+                    let albumStart = titleText.indexOf(' – ');
+                    if (albumStart !== -1) {
+                        if (!out['album']) out['album'] = titleText.substring(albumStart + 3).trim();
+                    } else {
+                        if (!out['album']) out['album'] = titleText.replace(artistName, '').trim();
+                    }
+                } else {
+                    if (!out['album']) out['album'] = titleText;
+                    if (!out['artists']) out['artists'] = ['Unknown Artist'];
+                }
+            }
+        } catch (err) {
+            console.error('Error extracting title/artist:', err);
+        }
+    }
+
+    // Fallback: Extract info from the info table using DOM selectors if not found in JSON-LD
+    try {
+        // Look for info container and table within it, without relying on specific hash classes
+        let infoContainer = document.querySelector('div[class*="info_"] table') ||
+                           document.querySelector('table[class*="table_"]');
+        if (infoContainer) {
+            let infoTable = infoContainer.querySelector('tbody') || infoContainer;
+            let rows = infoTable.getElementsByTagName('tr');
+            for (let row of rows) {
+                let header = row.querySelector('th h2') || row.querySelector('th');
+                let data = row.querySelector('td');
+                if (header && data) {
+                    let key = header.textContent.replace(':', '').trim();
+                    let value = data.textContent.trim();
+                    
+                    switch (key) {
+                        case 'Label':
+                            if (!out['label']) {
+                                // Extract label name (before catalog number)
+                                let labelLink = data.querySelector('a');
+                                if (labelLink) {
+                                    out['label'] = labelLink.textContent.trim();
+                                } else {
+                                    let parts = value.split(' – ');
+                                    out['label'] = parts[0].trim();
+                                }
+                            }
+                            break;
+                        case 'Format':
+                            if (!out['media']) {
+                                // Extract format info
+                                let formatLink = data.querySelector('a');
+                                if (formatLink) {
+                                    out['media'] = formatLink.textContent.trim();
+                                } else {
+                                    out['media'] = value.split(',')[0].trim();
+                                }
+                            }
+                            break;
+                        case 'Released':
+                            if (!out['date']) {
+                                let dateLink = data.querySelector('a time');
+                                if (dateLink) {
+                                    out['date'] = dateLink.getAttribute('datetime') || dateLink.textContent.trim();
+                                } else {
+                                    out['date'] = value;
+                                }
+                            }
+                            break;
+                        case 'Genre':
+                            if (!out['genre']) {
+                                let genreLink = data.querySelector('a');
+                                if (genreLink) {
+                                    out['genre'] = genreLink.textContent.trim();
+                                } else {
+                                    out['genre'] = value;
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Error extracting info table:', err);
+    }
+
+    // Set defaults if not found
+    if (!out['media']) out['media'] = 'Vinyl';
+    if (!out['label']) out['label'] = 'Self-Released';
     if (out['date']) out['date'] = formatDate(out['date']);
-    out['releaseType'] = 'Album';
-    out['numberOfDiscs'] = 1;
-    // tracks
+    if (!out['releaseType']) out['releaseType'] = 'Album';
+    if (!out['numberOfDiscs']) out['numberOfDiscs'] = "1";
 
-    let tracks = document.getElementById('tracklist').getElementsByTagName('tbody')[0]
-    let trackText = "";
-    for (let i = 0; i < tracks.children.length; i++) {
-        let track = tracks.children[i]
-        let trackPos = (i + 1).toString();
-        let es = track.getElementsByClassName("tracklist_track_pos")
-        if (es.length > 0) trackPos = es[0].textContent.trim();
-        let trackTitle = ''
-        es = track.getElementsByClassName("tracklist_track_title")
-        if (es.length > 0) trackTitle = es[0].textContent.trim();
-        let trackDur = ''
-        es = track.getElementsByClassName("tracklist_track_duration")
-        if (es.length > 0) trackDur = es[0].textContent.trim();
-        trackText += `${trackPos} - ${trackTitle} ${trackDur}\n`
+    // Extract tracks using stable ID and data attributes (JSON-LD usually doesn't include tracklist)
+    if (!out['tracks']) {
+        try {
+            // Use the stable ID selector first, fallback to other methods
+            let tracklist = document.querySelector('#release-tracklist tbody') || 
+                           document.querySelector('section[id*="tracklist"] tbody') ||
+                           document.querySelector('table[class*="tracklist"] tbody');
+            let trackText = "";
+            if (tracklist) {
+                let trackRows = tracklist.getElementsByTagName('tr');
+                for (let row of trackRows) {
+                    // Use data attributes which are more stable
+                    let trackPosition = row.getAttribute('data-track-position');
+                    if (trackPosition) {
+                        // Find track title in nested spans or any element containing track title
+                        let titleElement = row.querySelector('td:last-child span:last-child') ||
+                                         row.querySelector('td[class*="trackTitle"] span:last-child') ||
+                                         row.querySelector('td:last-child');
+                        
+                        if (titleElement) {
+                            let trackTitle = titleElement.textContent.trim();
+                            trackText += `${trackPosition} - ${trackTitle}\n`;
+                        }
+                    } else {
+                        // Fallback to positional extraction
+                        let posElement = row.querySelector('td:first-child') ||
+                                       row.querySelector('td[class*="trackPos"]');
+                        let titleElement = row.querySelector('td:last-child span:last-child') ||
+                                         row.querySelector('td[class*="trackTitle"]');
+                        
+                        if (posElement && titleElement) {
+                            let trackPos = posElement.textContent.trim();
+                            let trackTitle = titleElement.textContent.trim();
+                            trackText += `${trackPos} - ${trackTitle}\n`;
+                        }
+                    }
+                }
+            }
+            out['tracks'] = trackText;
+        } catch (err) {
+            console.error('Error extracting tracks:', err);
+            out['tracks'] = '';
+        }
     }
-    out['tracks'] = trackText;
 
-    out['description'] = out['url']
-    let noteBlock = document.getElementById('notes');
-    if (noteBlock) out['description'] += '\n\n' + noteBlock.children[1].textContent.trim();
+    // Fallback: Extract image URL using DOM selectors if not found in JSON-LD
+    if (!out['imgUrl']) {
+        try {
+            // Find element with data-images attribute using multiple selector strategies
+            let imageGalleryElement = 
+                // Try original selector first
+                (document.getElementById('page_content') && 
+                 document.getElementById('page_content').getElementsByClassName("image_gallery")[0]) ||
+                // Try finding any element with data-images attribute
+                document.querySelector('[data-images]') ||
+                // Try finding image_gallery class anywhere in document
+                document.getElementsByClassName("image_gallery")[0] ||
+                // Try variations of class names
+                document.querySelector('[class*="image_gallery"]') ||
+                document.querySelector('[class*="imageGallery"]') ||
+                document.querySelector('[class*="image-gallery"]');
 
-    out['imgUrl'] = JSON.parse(document.getElementById('page_content').getElementsByClassName("image_gallery")[0].attributes['data-images'].nodeValue)[0]['full'];
+            if (imageGalleryElement && imageGalleryElement.attributes['data-images']) {
+                out['imgUrl'] = JSON.parse(imageGalleryElement.attributes['data-images'].nodeValue)[0]['full'];
+            }
+        } catch (err) {
+            console.error('Error extracting image with DOM logic:', err);
+        }
+    }
+
+    // Handle genre mapping
+    const valueRenameMap = { 'Hip Hop': 'Rap' };
+    if (out['genre'] && valueRenameMap[out['genre']]) {
+        out['genre'] = valueRenameMap[out['genre']];
+    }
 
     return out;
 }
