@@ -1,4 +1,6 @@
 ## Introduction
+支持通过 Spotify/网易云音乐/Discogs/Bandcamp 快速录入音乐条目。
+
 在以下两个项目的基础上，增加了通过 Spotify 添加音乐条目的功能：
 - https://github.com/Sneexy/DoubanAddCloudMusicHelper
 - https://github.com/zeqianli/DoubanListingHelper
