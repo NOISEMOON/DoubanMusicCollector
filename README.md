@@ -19,7 +19,7 @@
 
 ## Contact
 有任何使用问题请私信我，我会及时更新此插件：
-- douban: https://www.douban.com/people/araell/
+- douban: https://www.douban.com/people/69377706/
 - weibo: https://weibo.com/u/7383494480
 
 ## Updates
